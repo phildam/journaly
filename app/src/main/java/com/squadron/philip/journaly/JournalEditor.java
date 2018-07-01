@@ -3,12 +3,8 @@ package com.squadron.philip.journaly;
 import android.app.DatePickerDialog;
 import android.app.Dialog;
 import android.app.TimePickerDialog;
-import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.SharedPreferences;
-import android.graphics.Bitmap;
-import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.DialogFragment;
 import android.support.v4.app.FragmentActivity;
@@ -16,8 +12,6 @@ import android.support.v4.app.FragmentTransaction;
 import android.support.v7.app.AlertDialog;
 import android.text.format.DateFormat;
 import android.util.Log;
-import android.util.TimeUtils;
-import android.view.MenuItem;
 import android.view.View;
 import android.widget.DatePicker;
 import android.widget.EditText;
@@ -32,11 +26,14 @@ import com.google.android.gms.common.GooglePlayServicesNotAvailableException;
 import com.google.android.gms.common.GooglePlayServicesRepairableException;
 import com.google.android.gms.location.places.Place;
 import com.google.android.gms.location.places.ui.PlacePicker;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
 import com.squadron.philip.journaly.database.AppDatabase;
 import com.squadron.philip.journaly.database.entity.JournalEntity;
 
-import java.net.URI;
-import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
 
@@ -45,29 +42,23 @@ public class JournalEditor extends FragmentActivity {
 
     private TextView info;
     private EditText content;
-    // ImageButton edit;
     private ImageButton save;
-    private ImageButton delete;
-    private ImageButton share;
     private ImageButton place;
     private TextView selectedPlace;
     private LinearLayout preview;
 
-    boolean autoSave;
-    private static String EDIT="EDIT";
-    private static FragmentTransaction transaction=null;
     private int PLACE_PICKER_REQUEST = 1;
     private ImageButton gallery;
     private static JournalEntity journalEntity;
     private AppDatabase mAppDatabase;
     private AppExecutors appExecutors;
 
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.journal_editor);
         appExecutors = new AppExecutors();
+
         initializeComponents();
         showPreview();
 
@@ -115,8 +106,6 @@ public class JournalEditor extends FragmentActivity {
     public void initializeComponents(){
         info=(TextView)findViewById(R.id.noteitemtextview);
         content=(EditText)findViewById(R.id.noteItemContent);
-        delete=(ImageButton)findViewById(R.id.noteitemdelete);
-        share=(ImageButton)findViewById(R.id.noteitemshare);
         save=(ImageButton)findViewById(R.id.noteitemsave);
         place=(ImageButton)findViewById(R.id.place);
         selectedPlace = (TextView)findViewById(R.id.selectedPlace);
@@ -141,16 +130,6 @@ public class JournalEditor extends FragmentActivity {
         newFragment.show(getSupportFragmentManager(), "datePicker");
     }
 
-    public void share(View view) {
-        Intent sendIntent = new Intent();
-        sendIntent.setAction(Intent.ACTION_SEND);
-        sendIntent.putExtra(Intent.EXTRA_TEXT,
-                "Journal: "+content.getText().toString()+"\n"+
-                        "shared from Journaly");
-        sendIntent.setType("text/plain");
-        sendIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK);
-        startActivity(sendIntent);
-    }
 
     public void saveJournal(View view) {
         String content = this.content.getText().toString();
@@ -185,6 +164,24 @@ public class JournalEditor extends FragmentActivity {
     }
 
 
+    public void firebaseListener(DatabaseReference myRef){
+        myRef.addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot) {
+
+                Object value = dataSnapshot.getValue(Object.class);
+                Log.d("FIREBASE", "Value is: " + value.toString());
+            }
+
+            @Override
+            public void onCancelled(DatabaseError error) {
+
+                Log.w("FIREBASE", "Failed to read value.", error.toException());
+            }
+        });
+    }
+
+
     public void addLocation(View view) {
         PlacePicker.IntentBuilder builder = new PlacePicker.IntentBuilder();
 
@@ -197,43 +194,6 @@ public class JournalEditor extends FragmentActivity {
         }
     }
 
-    public void deleteJournal(View view) {
-        FragmentTransaction transaction=getSupportFragmentManager().beginTransaction();
-        DeleteNoteFragment deleteNoteFrag=new DeleteNoteFragment();
-        deleteNoteFrag.show(transaction, "Delete");
-
-    }
-
-    public void editJournal(View view) {
-
-    }
-
-    public static class DeleteNoteFragment extends DialogFragment {
-        @Override
-        public Dialog onCreateDialog(Bundle savedInstanceState) {
-            // Use the Builder class for convenient dialog construction
-            AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
-            builder.setMessage("Delete Note")
-                    .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
-                        public void onClick(DialogInterface dialog, int id) {
-//                            if(dbHelper.deleteNote(noteModel.getId()) > 0){
-//                                Toast.makeText(getContext(), "Note deleted", Toast.LENGTH_SHORT).show();
-//
-//                                Intent it=new Intent(getContext(),DrugNote.class);
-//                                startActivity(it);
-//
-//                            }
-                        }
-                    })
-                    .setNegativeButton("No", new DialogInterface.OnClickListener() {
-                        public void onClick(DialogInterface dialog, int id) {
-                            // User cancelled the dialog
-                        }
-                    });
-            // Create the AlertDialog object and return it
-            return builder.create();
-        }
-    }
 
     public static class TimePickerFragment extends DialogFragment
             implements TimePickerDialog.OnTimeSetListener {
@@ -279,109 +239,8 @@ public class JournalEditor extends FragmentActivity {
         public void onDateSet(DatePicker view, int year, int month, int day) {
             journalEntity.setDateAdded(new Date(year, month, day));
         }
-    }
-
-
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-
-        int id = item.getItemId();
-
-        if (id == R.id.action_settings) {
-            return true;
-        }else if(id == R.id.action_edit){
-            if(!item.isChecked()){
-
-                saveToPreference(EDIT,true,true);
-                boolean flag=(Boolean)getFromPref(EDIT,true,true);
-                item.setChecked(flag);
-
-                content.setEnabled(true);
-                delete.setEnabled(true);
-                share.setEnabled(true);
-                save.setEnabled(true);
-            }else if(item.isChecked()){
-
-                saveToPreference(EDIT,false,false);
-                boolean flag=(Boolean)getFromPref(EDIT,false,false);
-                flag=true;
-                item.setChecked(flag);
-
-            }
-
-        }else if(id == R.id.action_autosave){
-            if(!item.isChecked()){
-                item.setChecked(true);
-                autoSave=true;
-            }else{
-                item.setChecked(false);
-                autoSave=false;
-            }
-        }else if(id == R.id.action_deletenote){
-
-        }
-
-        else if(id == R.id.action_remindnote){
-
-        }
-
-        else if(id == R.id.action_save){
-
-        }else if(id == R.id.action_share){
-
-        }
-
-        return super.onOptionsItemSelected(item);
-    }
-
-    @Override
-    public void onPause() {
-        super.onPause();
-        autoSave(true);
-    }
-
-    public void saveToPreference(String key, Object value,Object obj){
-        SharedPreferences sharedPref = getPreferences(Context.MODE_PRIVATE);
-        SharedPreferences.Editor editor = sharedPref.edit();
-        if(obj.getClass() == String.class){
-            editor.putString(key,(String)value);
-        }else if(obj.getClass() == Boolean.class){
-            editor.putBoolean(key,(Boolean)value);
-        }else if(obj.getClass() == Integer.class) {
-            editor.putInt(key, (Integer) value);
-        }
-        editor.commit();
-    }
-    public Object getFromPref(String key,Object obj, Object def){
-        SharedPreferences sharedPref = getPreferences(Context.MODE_PRIVATE);
-
-        Object prefValue=null;
-        if(obj.getClass() == String.class){
-            String defaultValue = (String)def ;
-            prefValue = sharedPref.getString(key, defaultValue);
-        }else if(obj.getClass() == Boolean.class){
-            Boolean defaultValue = (Boolean)def ;
-            prefValue = sharedPref.getBoolean(key, defaultValue);
-        }else if(obj.getClass() == Integer.class) {
-            Integer defaultValue = (Integer)def ;
-            prefValue = sharedPref.getInt(key, defaultValue);
-        }
-
-        return prefValue;
-    }
-
-
-
-    public void autoSave(boolean autosave){
-        if(autoSave) {
-//            if (dbHelper.updateNote(noteModel.getId(), " ",
-//                    content.getText().toString(), noteModel.getDate(), getCurrentDateInfo()) > 0) {
-//                Toast.makeText(JournalEditor.this, "Note Auto-saved", Toast.LENGTH_SHORT).show();
-//            }
-        }
+     }
 
     }
 
 
-}

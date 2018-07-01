@@ -13,6 +13,8 @@
         android:layout_height="?attr/actionBarSize"
         android:background="?attr/colorPrimary"
         android:elevation="4dp"
+        app:titleTextColor="@color/white"
+        app:subtitleTextColor="@color/blue_grey_600"
         android:theme="@style/ThemeOverlay.AppCompat.ActionBar"
         app:popupTheme="@style/ThemeOverlay.AppCompat.Light" />
 
@@ -27,15 +29,13 @@
         app:layout_constraintTop_toTopOf="parent"
         app:srcCompat="@drawable/j2" />
 
-    <TextView
-        android:id="@+id/journal_viewer_text"
+    <ScrollView
         android:layout_width="325dp"
         android:layout_height="338dp"
-        android:background="@color/white"
-        android:elevation="10dp"
-        android:fontFamily="@font/dancing_script"
-        android:padding="10dp"
-        android:textSize="18sp"
+        android:scrollbars="vertical"
+        android:fillViewport="true"
+        android:scrollbarFadeDuration="2"
+        android:scrollbarAlwaysDrawVerticalTrack="false"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.508"
@@ -43,15 +43,27 @@
         app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.614" />
+        app:layout_constraintVertical_bias="0.614"
+        >
+        <TextView
+            android:id="@+id/journal_viewer_text"
+            android:background="@color/white"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:elevation="10dp"
+            android:textIsSelectable="true"
+            android:fontFamily="@font/dancing_script"
+            android:padding="10dp"
+            android:textSize="18sp"
+            />
+    </ScrollView>
 
     <TextView
-        android:id="@+id/textView3"
+        android:id="@+id/journal_location"
         android:layout_width="152dp"
         android:layout_height="27dp"
         android:layout_marginRight="16dp"
         android:background="@color/white"
-        android:text="TextView"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="1.0"
         app:layout_constraintRight_toRightOf="parent"
@@ -59,10 +71,11 @@
         app:layout_constraintTop_toTopOf="parent" />
 
     <TextView
-        android:id="@+id/textView4"
-        android:layout_width="94dp"
+        android:id="@+id/journal_last_update"
+        android:layout_width="wrap_content"
+        android:textAlignment="center"
+        android:gravity="center"
         android:layout_height="22dp"
-        android:text="TextView"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintLeft_toLeftOf="parent"

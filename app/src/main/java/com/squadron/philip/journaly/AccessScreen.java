@@ -16,6 +16,16 @@ import com.google.android.gms.common.SignInButton;
 import com.google.android.gms.common.api.ApiException;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
+import com.squadron.philip.journaly.database.AppDatabase;
+import com.squadron.philip.journaly.database.entity.JournalEntity;
+
+import java.util.HashMap;
+import java.util.List;
 
 
 public class AccessScreen extends AppCompatActivity implements
@@ -26,12 +36,21 @@ public class AccessScreen extends AppCompatActivity implements
 
     private GoogleSignInClient mGoogleSignInClient;
     private TextView mStatusTextView;
+    private FirebaseDatabase database;
+    private DatabaseReference myRef;
+    private AppDatabase mAppDatabase;
+    private AppExecutors appExecutors;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_access_screen);
 
+        database = FirebaseDatabase.getInstance();
+        myRef = database.getReference("Journaly");
+        mAppDatabase  = AppDatabase.getInstance(getApplicationContext());
+        appExecutors = new AppExecutors();
 
         mStatusTextView = findViewById(R.id.status);
 
@@ -62,6 +81,36 @@ public class AccessScreen extends AppCompatActivity implements
 
     }
 
+    public void firebaseListener(DatabaseReference myRef, final String key){
+        myRef.addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot) {
+
+                Object value = dataSnapshot.getValue(Object.class);
+                final HashMap entities = (HashMap) value;
+
+                if(entities != null){
+                    final List<JournalEntity> journalEntities = (List<JournalEntity>)entities.get(key);
+                    Log.d("PORO", entities.get(key).getClass().getSimpleName());
+                    appExecutors.diskIO().execute(new Runnable() {
+                        @Override
+                        public void run() {
+                            if(journalEntities != null && journalEntities.size() > 0 ) {
+                                // mAppDatabase.journalDao().insertJournals(journalEntities);
+                                Log.e("POROS", ((List<JournalEntity>) entities.get(key)).size()+"");
+
+                            }
+                        }
+                    });
+                }
+            }
+
+            @Override
+            public void onCancelled(DatabaseError error) {
+                Log.w("FIREBASE", "Failed to read value.", error.toException());
+            }
+        });
+    }
 
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
@@ -118,6 +167,7 @@ public class AccessScreen extends AppCompatActivity implements
     private void updateUI(@Nullable GoogleSignInAccount account) {
         if (account != null) {
             mStatusTextView.setText(getString(R.string.signed_in_fmt, account.getDisplayName()));
+            firebaseListener(myRef, account.getDisplayName());
             findViewById(R.id.sign_in_button).setVisibility(View.GONE);
             findViewById(R.id.sign_out_and_disconnect).setVisibility(View.VISIBLE);
             Intent intent = new Intent(this, MainActivity.class);

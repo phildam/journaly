@@ -1,9 +1,18 @@
 package com.squadron.philip.journaly;
 
+import android.content.Intent;
 import android.util.Log;
+
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.ValueEventListener;
+import com.squadron.philip.journaly.database.entity.JournalEntity;
 
 import java.util.Calendar;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
 
 /**
  * Created by philip on 01/07/2018.
@@ -11,13 +20,19 @@ import java.util.Date;
 
 public class Processor {
     public String getDayOfWeek(Date date){
-        Calendar calendar = Calendar.getInstance();
-        calendar.setTime(date);
-        int dayOfWeek = calendar.get(Calendar.DAY_OF_WEEK);
-        String[] weekDays = new String[]{
-                "Saturday", "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday",
-        };
-       return weekDays[dayOfWeek];
+        String selectedWeekDay = null;
+        try {
+            Calendar calendar = Calendar.getInstance();
+            calendar.setTime(date);
+            int dayOfWeek = calendar.get(Calendar.DAY_OF_WEEK);
+            String[] weekDays = new String[]{
+                    "Saturday", "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday",
+            };
+            selectedWeekDay =  weekDays[dayOfWeek];
+        } catch(Exception e) {
+            selectedWeekDay = null;
+        }
+        return selectedWeekDay;
     }
 
     public static int imageSelector(int position){
@@ -31,4 +46,26 @@ public class Processor {
 
             return pic[position > 19 || position < 0 ?  0 : position];
     }
+
+    public static void firebaseListener(DatabaseReference myRef, final Intent intent){
+        myRef.addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot) {
+
+                Object value = dataSnapshot.getValue(Object.class);
+                HashMap entities = (HashMap) value;
+                if(entities != null){
+                    List<JournalEntity> journalEntities = (List<JournalEntity>)entities.get(intent.getStringExtra(MainActivity.USERNAME));
+                    Log.e("FIREBASE", "Value is: " + journalEntities);
+                }
+
+            }
+
+            @Override
+            public void onCancelled(DatabaseError error) {
+                Log.w("FIREBASE", "Failed to read value.", error.toException());
+            }
+        });
+    }
+
 }

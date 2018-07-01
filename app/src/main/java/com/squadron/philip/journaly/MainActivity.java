@@ -1,12 +1,18 @@
 package com.squadron.philip.journaly;
 
+import android.arch.lifecycle.LiveData;
+import android.arch.lifecycle.Observer;
+import android.arch.lifecycle.ViewModelProvider;
+import android.arch.lifecycle.ViewModelProviders;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
+import android.support.annotation.Nullable;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.helper.ItemTouchHelper;
+import android.util.Log;
 import android.view.View;
 import android.support.design.widget.NavigationView;
 import android.support.v4.view.GravityCompat;
@@ -21,10 +27,17 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
 import com.squadron.philip.journaly.database.AppDatabase;
 import com.squadron.philip.journaly.database.entity.JournalEntity;
+import com.squadron.philip.journaly.model.MainViewModel;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity
@@ -32,10 +45,15 @@ public class MainActivity extends AppCompatActivity
 
     private JournalAdapter mAdapter;
     private RecyclerView mJournalList;
-    private List<JournalEntity> journals;
+    private List<JournalEntity> journals = new ArrayList<>();;
     private AppDatabase mAppDataBase;
     public static String EDITOR = "EDITOR";
+    public static String USERNAME = "USERNAME";
     private AppExecutors executors;
+    private MainViewModel mainViewModel;
+    private FirebaseDatabase database;
+    private DatabaseReference myRef;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -47,14 +65,33 @@ public class MainActivity extends AppCompatActivity
 
         mAppDataBase = AppDatabase.getInstance(getApplicationContext());
         executors = new AppExecutors();
-        LoadOrReloadAdapter();
-        loadEditor();
-
+        mAdapter = new JournalAdapter(journals, this);
 
         mJournalList = (RecyclerView) findViewById(R.id.journal_recycler_view);
         LinearLayoutManager layoutManager = new LinearLayoutManager(this);
         mJournalList.setLayoutManager(layoutManager);
         mJournalList.setHasFixedSize(true);
+        mJournalList.setAdapter(mAdapter);
+
+        database = FirebaseDatabase.getInstance();
+        myRef = database.getReference("Journaly");
+        firebaseListener(myRef);
+
+        mainViewModel = ViewModelProviders.of(this).get(MainViewModel.class);
+        final Observer<List<JournalEntity>> jouListObserver = new Observer<List<JournalEntity>>() {
+            @Override
+            public void onChanged(@Nullable List<JournalEntity> journalEntities) {
+                mAdapter.setJournals(journalEntities);
+                toggleInfoText(journalEntities);
+                myRef.child(getIntent().getStringExtra(MainActivity.USERNAME)).setValue(journalEntities);
+
+            }
+        };
+
+        mainViewModel.getJournals().observe(this, jouListObserver);
+
+
+        openJournalViewer();
         swipeToDelete(mJournalList);
 
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
@@ -75,6 +112,30 @@ public class MainActivity extends AppCompatActivity
 
     }
 
+    public void firebaseListener(DatabaseReference myRef){
+        myRef.addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot) {
+
+                Object value = dataSnapshot.getValue(Object.class);
+                HashMap entities = (HashMap) value;
+                if(entities != null){
+                    List<JournalEntity> journalEntities = (List<JournalEntity>)entities.get(getIntent().getStringExtra(MainActivity.USERNAME));
+                    Log.e("FIREBASE", "Value is: " + journalEntities);
+                }
+
+
+
+            }
+
+            @Override
+            public void onCancelled(DatabaseError error) {
+                Log.w("FIREBASE", "Failed to read value.", error.toException());
+            }
+        });
+    }
+
+
     public void swipeToDelete(RecyclerView recyclerView){
         new ItemTouchHelper(new ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.LEFT | ItemTouchHelper.RIGHT) {
             @Override
@@ -91,35 +152,16 @@ public class MainActivity extends AppCompatActivity
                         int position = viewHolder.getAdapterPosition();
                         List<JournalEntity> journalEntities = mAdapter.getJournals();
                         mAppDataBase.journalDao().deleteJournal(journalEntities.get(position));
-                        LoadOrReloadAdapter();
                     }
                 });
             }
         }).attachToRecyclerView(recyclerView);
     }
 
-    public void LoadOrReloadAdapter(){
-        executors.diskIO().execute(new Runnable() {
-            @Override
-            public void run() {
-                journals = mAppDataBase.journalDao().loadAllJournal();
-                mAdapter = new JournalAdapter(journals, MainActivity.this);
 
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        mJournalList.setAdapter(mAdapter);
-                        toggleInfoText();
-                    }
-                });
-            }
-        });
-
-    }
-
-    public void toggleInfoText(){
+    public void toggleInfoText(List<JournalEntity> journalEntities){
         TextView infoText = (TextView)findViewById(R.id.no_journal);
-        if (journals.size() > 0) {
+        if (journalEntities.size() > 0) {
             infoText.setVisibility(View.GONE);
         } else {
             infoText.setVisibility(View.VISIBLE);
@@ -127,21 +169,18 @@ public class MainActivity extends AppCompatActivity
     }
 
 
-    public void loadEditor(){
+    public void openJournalViewer(){
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                startActivity(new Intent(MainActivity.this, JournalEditor.class));
+                Intent intent =new Intent(MainActivity.this, JournalEditor.class);
+                intent.putExtra(USERNAME,  getIntent().getStringExtra("USERNAME"));
+                startActivity(intent);
             }
         });
     }
 
-    @Override
-    protected void onResume() {
-        super.onResume();
-        LoadOrReloadAdapter();
-    }
 
     @Override
     public void onBackPressed() {
@@ -176,7 +215,6 @@ public class MainActivity extends AppCompatActivity
 
         int id = item.getItemId();
 
-        //noinspection SimplifiableIfStatement
         if (id == R.id.action_settings) {
             return true;
         }
@@ -187,22 +225,7 @@ public class MainActivity extends AppCompatActivity
     @SuppressWarnings("StatementWithEmptyBody")
     @Override
     public boolean onNavigationItemSelected(MenuItem item) {
-        // Handle navigation view item clicks here.
-        int id = item.getItemId();
 
-        if (id == R.id.nav_camera) {
-            // Handle the camera action
-        } else if (id == R.id.nav_gallery) {
-
-        } else if (id == R.id.nav_slideshow) {
-
-        } else if (id == R.id.nav_manage) {
-
-        } else if (id == R.id.nav_share) {
-
-        } else if (id == R.id.nav_send) {
-
-        }
 
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         drawer.closeDrawer(GravityCompat.START);
@@ -213,6 +236,7 @@ public class MainActivity extends AppCompatActivity
     public void onItemClickListener(JournalEntity journalEntity) {
         Intent intent = new Intent(MainActivity.this, JournalViewer.class);
         intent.putExtra(EDITOR, journalEntity);
+        intent.putExtra(USERNAME,  getIntent().getStringExtra("USERNAME"));
         startActivity(intent);
     }
 }

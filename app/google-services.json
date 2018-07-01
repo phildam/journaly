@@ -1,0 +1,42 @@
+{
+  "project_info": {
+    "project_number": "909540966924",
+    "firebase_url": "https://journaly-1530342918065.firebaseio.com",
+    "project_id": "journaly-1530342918065",
+    "storage_bucket": "journaly-1530342918065.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:909540966924:android:c579bd0e6a0c4043",
+        "android_client_info": {
+          "package_name": "com.squadron.philip.journaly"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "909540966924-piq0th6hb5ihake6s8j5ags827p6p79u.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBuvh3iEKR3reL9GZv__QheXI2_b0JWIkc"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 1,
+          "other_platform_oauth_client": []
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

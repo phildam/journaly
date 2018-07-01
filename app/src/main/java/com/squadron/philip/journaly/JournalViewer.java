@@ -30,6 +30,8 @@ public class JournalViewer extends AppCompatActivity {
     private JournalEntity journalEntity;
     private AppExecutors executors;
     private TextView journaltext;
+    private TextView journalLocation;
+    private TextView journalLastUpDateTime;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -40,12 +42,14 @@ public class JournalViewer extends AppCompatActivity {
         setSupportActionBar(myToolbar);
 
         journaltext = (TextView) findViewById(R.id.journal_viewer_text);
-
-        ActionBar aBar = getSupportActionBar();
-        aBar.setDisplayHomeAsUpEnabled(true);
+        journalLocation = (TextView) findViewById(R.id.journal_location);
+        journalLastUpDateTime = (TextView) findViewById(R.id.journal_last_update);
 
         journalEntity = (JournalEntity)getIntent().getSerializableExtra(MainActivity.EDITOR);
         journaltext.setText(journalEntity.getContent());
+        journalLastUpDateTime.setText((journalEntity.getLastModifiedDate().toGMTString()));
+        journalLocation.setText(journalEntity.getLocation());
+
         executors = new AppExecutors();
         mAppDatabase = AppDatabase.getInstance(getApplicationContext());
         int randomImageSelector = Processor.imageSelector(
@@ -65,7 +69,20 @@ public class JournalViewer extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-
+        executors.diskIO().execute(new Runnable() {
+            @Override
+            public void run() {
+                 journalEntity =  mAppDatabase.journalDao().loadJournalEntityById(journalEntity.getId());
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            journaltext.setText(journalEntity.getContent());
+                            journalLastUpDateTime.setText((journalEntity.getLastModifiedDate().toGMTString()));
+                            journalLocation.setText(journalEntity.getLocation());
+                        }
+                    });
+            }
+        });
     }
 
     @Override
@@ -84,10 +101,11 @@ public class JournalViewer extends AppCompatActivity {
             case R.id.action_edit_journal:
                 Intent intent = new Intent(this, JournalEditor.class);
                 intent.putExtra(MainActivity.EDITOR, journalEntity);
+                intent.putExtra(MainActivity.USERNAME, getIntent().getStringExtra(MainActivity.USERNAME));
                 startActivity(intent);
                 return true;
             case R.id.action_share_journal:
-
+                shareJournal();
                 return true;
 
             default:
@@ -95,5 +113,16 @@ public class JournalViewer extends AppCompatActivity {
                 return super.onOptionsItemSelected(item);
 
         }
+    }
+
+    public void shareJournal(){
+        Intent sendIntent = new Intent();
+        sendIntent.setAction(Intent.ACTION_SEND);
+        sendIntent.putExtra(Intent.EXTRA_TEXT,
+                "Journal: "+journalEntity.getContent()+"\n"+
+                        "shared from Journaly");
+        sendIntent.setType("text/plain");
+        sendIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        startActivity(sendIntent);
     }
 }

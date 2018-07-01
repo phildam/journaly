@@ -72,28 +72,6 @@
         android:orientation="horizontal">
 
         <ImageButton
-            android:background="@drawable/light"
-            android:layout_width="0dp"
-            android:scaleType="centerInside"
-            android:layout_weight="1"
-            android:layout_height="50dp"
-            android:layout_margin="3dp"
-            android:onClick="shareJournal"
-            android:src="@android:drawable/ic_menu_share"
-            android:id="@+id/noteitemshare" />
-
-        <ImageButton
-            android:layout_width="0dp"
-            android:layout_weight="1"
-            android:scaleType="centerInside"
-            android:background="@drawable/light"
-            android:layout_margin="3dp"
-            android:layout_height="50dp"
-            android:text="Delete"
-            android:onClick="deleteJournal"
-            android:src="@android:drawable/ic_menu_delete"
-            android:id="@+id/noteitemdelete" />
-        <ImageButton
             android:id="@+id/place"
             android:layout_width="0dp"
             android:layout_height="50dp"
@@ -101,6 +79,7 @@
             android:layout_weight="1"
             android:background="@drawable/light"
             android:scaleType="centerInside"
+            android:tint="@color/colorPrimaryDark"
             android:onClick="addLocation"
             android:src="@android:drawable/ic_dialog_map"
             android:text="location" />
@@ -110,6 +89,7 @@
             android:layout_width="0dp"
             android:layout_height="50dp"
             android:layout_margin="3dp"
+            android:tint="@color/colorPrimaryDark"
             android:layout_weight="1"
             android:background="@drawable/light"
             android:onClick="showDatePicker"
@@ -124,6 +104,7 @@
             android:layout_weight="1"
             android:onClick="showTimePicker"
             android:background="@drawable/light"
+            android:tint="@color/colorPrimaryDark"
             android:scaleType="centerInside"
             android:src="@android:drawable/ic_lock_idle_alarm" />
 
@@ -135,6 +116,7 @@
             android:layout_weight="1"
             android:background="@drawable/light"
             android:scaleType="centerInside"
+            android:tint="@color/colorPrimaryDark"
             android:onClick="saveJournal"
             android:src="@android:drawable/ic_menu_save"
             android:text="save" />
