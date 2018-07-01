@@ -31,9 +31,15 @@
             android:name=".AccessScreen"
             android:label="sign in"
             android:theme="@style/AppTheme.NoActionBar" />
-        <activity android:name=".NoteAdder" />
-        <activity android:name=".JournalEditor" />
-        <activity android:name=".MapsActivity"></activity>
+        <activity
+            android:theme="@style/AppTheme.NoActionBar"
+            android:name=".JournalViewer" />
+        <activity
+            android:theme="@style/AppTheme.NoActionBar"
+            android:name=".JournalEditor" />
+        <activity
+            android:theme="@style/AppTheme.NoActionBar"
+            android:name=".MapsActivity"></activity>
 
         <meta-data
             android:name="com.google.android.geo.API_KEY"

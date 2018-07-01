@@ -127,7 +127,6 @@ public class MainActivity extends AppCompatActivity
     }
 
 
-
     public void loadEditor(){
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
@@ -210,11 +209,9 @@ public class MainActivity extends AppCompatActivity
         return true;
     }
 
-
     @Override
     public void onItemClickListener(JournalEntity journalEntity) {
-        Toast.makeText(this, journalEntity.getContent(), Toast.LENGTH_SHORT).show();
-        Intent intent = new Intent(MainActivity.this, JournalEditor.class);
+        Intent intent = new Intent(MainActivity.this, JournalViewer.class);
         intent.putExtra(EDITOR, journalEntity);
         startActivity(intent);
     }
