@@ -26,6 +26,7 @@
         android:id="@+id/journal_Image"
         android:layout_width="104dp"
         android:layout_height="108dp"
+        android:scaleType="centerCrop"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.959"

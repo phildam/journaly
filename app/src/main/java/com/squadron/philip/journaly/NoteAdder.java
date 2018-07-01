@@ -1,21 +1,12 @@
 package com.squadron.philip.journaly;
 
-import android.content.Intent;
 import android.os.Bundle;
-import android.support.v4.app.Fragment;
-import android.support.v4.app.FragmentTransaction;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
-import android.view.LayoutInflater;
-import android.view.View;
-import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.Toast;
 
 import com.squadron.philip.journaly.database.AppDatabase;
-import com.squadron.philip.journaly.database.JournalEntry;
-import com.squadron.philip.journaly.model.NoteModel;
 
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
@@ -57,7 +48,7 @@ public class NoteAdder extends AppCompatActivity {
         String content = mContent.getText().toString();
         Date journalDate = new Date();
 
-       // JournalEntry journalEntry =new JournalEntry(content, journalDate )
+       // JournalEntity journalEntry =new JournalEntity(content, journalDate )
     }
 
 

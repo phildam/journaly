@@ -16,11 +16,14 @@ import android.support.v4.app.FragmentTransaction;
 import android.support.v7.app.AlertDialog;
 import android.text.format.DateFormat;
 import android.util.Log;
+import android.util.TimeUtils;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.DatePicker;
 import android.widget.EditText;
 import android.widget.ImageButton;
+import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.TimePicker;
 import android.widget.Toast;
@@ -29,139 +32,64 @@ import com.google.android.gms.common.GooglePlayServicesNotAvailableException;
 import com.google.android.gms.common.GooglePlayServicesRepairableException;
 import com.google.android.gms.location.places.Place;
 import com.google.android.gms.location.places.ui.PlacePicker;
-import com.squadron.philip.journaly.model.NoteModel;
+import com.squadron.philip.journaly.database.AppDatabase;
+import com.squadron.philip.journaly.database.entity.JournalEntity;
 
+import java.net.URI;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
+import java.util.Date;
 
 
 public class JournalEditor extends FragmentActivity {
 
-    TextView info;
-    EditText content;
+    private TextView info;
+    private EditText content;
     // ImageButton edit;
-    ImageButton save;
-    ImageButton delete;
-    ImageButton share;
-    ImageButton place;
-    static DatabaseHelper dbHelper;
-    static NoteModel noteModel;
+    private ImageButton save;
+    private ImageButton delete;
+    private ImageButton share;
+    private ImageButton place;
+    private TextView selectedPlace;
+    private LinearLayout preview;
+
     boolean autoSave;
-    static String EDIT="EDIT";
-    static FragmentTransaction transaction=null;
-    int PLACE_PICKER_REQUEST = 1;
-    int GALLERY_REQUEST_CODE = 9;
-    View view;
+    private static String EDIT="EDIT";
+    private static FragmentTransaction transaction=null;
+    private int PLACE_PICKER_REQUEST = 1;
     private ImageButton gallery;
+    private static JournalEntity journalEntity;
+    private AppDatabase mAppDatabase;
+    private AppExecutors appExecutors;
 
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.journal_editor);
+        appExecutors = new AppExecutors();
+        initializeComponents();
+        showPreview();
 
-        dbHelper = new DatabaseHelper(this);
-        componentLoader();
-        Bundle bundle=getIntent().getExtras();
-        if (bundle != null){
-            noteModel=(NoteModel)bundle.getSerializable(NoteModel.NOTECONSTANT);
-        }else{
-            noteModel=new NoteModel(0," "," "," "," ");
+        mAppDatabase  = AppDatabase.getInstance(getApplicationContext());
+
+        if (getIntent() != null && getIntent().hasExtra(MainActivity.EDITOR)){
+            journalEntity = (JournalEntity)getIntent().getSerializableExtra(MainActivity.EDITOR);
+
+            info.setText("Created at: " + journalEntity.getDateAdded().toGMTString());
+        } else {
+            journalEntity=new JournalEntity();
+            journalEntity.setDateAdded(new Date());
+            info.setText("Date: " + new Date().toGMTString());
         }
-        noteProcessor(noteModel);
-        notebuttonsProcessor();
+        initEditor(journalEntity);
 
     }
 
-    public void componentLoader(){
-        info=(TextView)findViewById(R.id.noteitemtextview);
-
-        content=(EditText)findViewById(R.id.noteItemContent);
-        delete=(ImageButton)findViewById(R.id.noteitemdelete);
-        share=(ImageButton)findViewById(R.id.noteitemshare);
-        save=(ImageButton)findViewById(R.id.noteitemsave);
-        place=(ImageButton)findViewById(R.id.place);
-        gallery = (ImageButton)findViewById(R.id.gallery);
-
-    }
-
-    public void noteProcessor(NoteModel noteModel){
-        content.setText(noteModel.getContent());
-        info.setText("Last Modified Date: "+noteModel.getDatemodified());
-    }
-
-    public String getCurrentDateInfo(){
-        Calendar calendar=Calendar.getInstance();
-        SimpleDateFormat df = new SimpleDateFormat("dd-MM-yyyy hh:mm");
-        Log.d("philcorp","Calendardate "+df.format(calendar.getTime()));
-        String theDate=df.format(calendar.getTime());
-        return theDate;
-    }
-
-    public void notebuttonsProcessor(){
-        save.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if(dbHelper.updateNote(noteModel.getId(), " ",
-                        content.getText().toString(), noteModel.getDate(), getCurrentDateInfo()) > 0){
-                    Toast.makeText(JournalEditor.this, "Note saved", Toast.LENGTH_SHORT).show();
-                } else {
-                    Toast.makeText(JournalEditor.this, "An error occured, Note could not be saved.", Toast.LENGTH_SHORT).show();
-                }
-
-            }
-        });
-
-        place.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                PlacePicker.IntentBuilder builder = new PlacePicker.IntentBuilder();
-
-                try {
-                    startActivityForResult(builder.build(JournalEditor.this), PLACE_PICKER_REQUEST);
-                } catch (GooglePlayServicesRepairableException e) {
-                    e.printStackTrace();
-                } catch (GooglePlayServicesNotAvailableException e) {
-                    e.printStackTrace();
-                }
-            }
-        });
-
-        gallery.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Intent galleryIntent = new Intent(Intent.ACTION_PICK,
-                        android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
-
-                startActivityForResult(galleryIntent, GALLERY_REQUEST_CODE);
-            }
-        });
-
-//        delete.setOnClickListener(new View.OnClickListener() {
-//            @Override
-//            public void onClick(View v) {
-//                FragmentTransaction transaction=getSupportFragmentManager().beginTransaction();
-//                DeleteNoteFragment deleteNoteFrag=new DeleteNoteFragment();
-//                deleteNoteFrag.show(transaction, "Delete");
-//
-//            }
-//        });
-//
-//        share.setOnClickListener(new View.OnClickListener() {
-//            @Override
-//            public void onClick(View v) {
-//                Intent sendIntent = new Intent();
-//                sendIntent.setAction(Intent.ACTION_SEND);
-//                sendIntent.putExtra(Intent.EXTRA_TEXT,
-//                "Journal: "+content.getText().toString()+"\n"+
-//                "shared from Journaly");
-//                sendIntent.setType("text/plain");
-//                sendIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK);
-//                startActivity(sendIntent);
-//            }
-//        });
-
-
+    @Override
+    protected void onResume() {
+        super.onResume();
+        showPreview();
     }
 
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
@@ -170,14 +98,36 @@ public class JournalEditor extends FragmentActivity {
                 Place place = PlacePicker.getPlace(data, this);
                 String toastMsg = String.format("Place: %s", place.getName());
                 Toast.makeText(this, toastMsg, Toast.LENGTH_LONG).show();
-
+                selectedPlace.setText(place.getName());
+                journalEntity.setLocation(place.getName().toString());
+                showPreview();
             }
         }
 
-        if (requestCode == GALLERY_REQUEST_CODE && resultCode == RESULT_OK) {
-            Bitmap thumbnail = data.getParcelableExtra("data");
-            Uri fullPhotoUri = data.getData();
+    }
 
+    public void initEditor(JournalEntity journalEntity){
+        info.setText(journalEntity.getLastModifiedDate().toGMTString());
+        content.setText(journalEntity.getContent());
+        selectedPlace.setText(journalEntity.getLocation());
+    }
+
+    public void initializeComponents(){
+        info=(TextView)findViewById(R.id.noteitemtextview);
+        content=(EditText)findViewById(R.id.noteItemContent);
+        delete=(ImageButton)findViewById(R.id.noteitemdelete);
+        share=(ImageButton)findViewById(R.id.noteitemshare);
+        save=(ImageButton)findViewById(R.id.noteitemsave);
+        place=(ImageButton)findViewById(R.id.place);
+        selectedPlace = (TextView)findViewById(R.id.selectedPlace);
+        preview = (LinearLayout) findViewById(R.id.preview);
+    }
+
+    public void showPreview() {
+        if(!selectedPlace.getText().toString().isEmpty()) {
+            preview.setVisibility(View.VISIBLE);
+        } else {
+            preview.setVisibility(View.GONE);
         }
     }
 
@@ -191,6 +141,73 @@ public class JournalEditor extends FragmentActivity {
         newFragment.show(getSupportFragmentManager(), "datePicker");
     }
 
+    public void share(View view) {
+        Intent sendIntent = new Intent();
+        sendIntent.setAction(Intent.ACTION_SEND);
+        sendIntent.putExtra(Intent.EXTRA_TEXT,
+                "Journal: "+content.getText().toString()+"\n"+
+                        "shared from Journaly");
+        sendIntent.setType("text/plain");
+        sendIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        startActivity(sendIntent);
+    }
+
+    public void saveJournal(View view) {
+        String content = this.content.getText().toString();
+        Date date = new Date();
+        int hourOfDay = date.getHours();
+        int minutes = date.getMinutes();
+        String am0rPm = hourOfDay > 12 && hourOfDay <= 24 ? "PM" : "AM";
+
+
+        if (journalEntity.getTime().isEmpty()){
+            journalEntity.setTime(formatter(hourOfDay)+ ":" + formatter(minutes)+am0rPm);
+        }
+
+        if (content.isEmpty()) {
+            Toast.makeText(this, "Add some content to save", Toast.LENGTH_SHORT).show();
+        } else {
+            journalEntity.setContent(content);
+                appExecutors.diskIO().execute(new Runnable() {
+                    @Override
+                    public void run() {
+                        if(getIntent() != null && getIntent().hasExtra(MainActivity.EDITOR)) {
+                            mAppDatabase.journalDao().updateJournal(journalEntity);
+                        } else {
+                            mAppDatabase.journalDao().InsertJournal(journalEntity);
+                        }
+                        finish();
+                    }
+                });
+
+            }
+
+    }
+
+
+    public void addLocation(View view) {
+        PlacePicker.IntentBuilder builder = new PlacePicker.IntentBuilder();
+
+        try {
+            startActivityForResult(builder.build(JournalEditor.this), PLACE_PICKER_REQUEST);
+        } catch (GooglePlayServicesRepairableException e) {
+            e.printStackTrace();
+        } catch (GooglePlayServicesNotAvailableException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void deleteJournal(View view) {
+        FragmentTransaction transaction=getSupportFragmentManager().beginTransaction();
+        DeleteNoteFragment deleteNoteFrag=new DeleteNoteFragment();
+        deleteNoteFrag.show(transaction, "Delete");
+
+    }
+
+    public void editJournal(View view) {
+
+    }
+
     public static class DeleteNoteFragment extends DialogFragment {
         @Override
         public Dialog onCreateDialog(Bundle savedInstanceState) {
@@ -199,13 +216,13 @@ public class JournalEditor extends FragmentActivity {
             builder.setMessage("Delete Note")
                     .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
                         public void onClick(DialogInterface dialog, int id) {
-                            if(dbHelper.deleteNote(noteModel.getId()) > 0){
-                                Toast.makeText(getContext(), "Note deleted", Toast.LENGTH_SHORT).show();
-
-                                Intent it=new Intent(getContext(),DrugNote.class);
-                                startActivity(it);
-
-                            }
+//                            if(dbHelper.deleteNote(noteModel.getId()) > 0){
+//                                Toast.makeText(getContext(), "Note deleted", Toast.LENGTH_SHORT).show();
+//
+//                                Intent it=new Intent(getContext(),DrugNote.class);
+//                                startActivity(it);
+//
+//                            }
                         }
                     })
                     .setNegativeButton("No", new DialogInterface.OnClickListener() {
@@ -231,12 +248,19 @@ public class JournalEditor extends FragmentActivity {
         }
 
         public void onTimeSet(TimePicker view, int hourOfDay, int minute) {
-
-            Toast.makeText(getContext(), " "+hourOfDay, Toast.LENGTH_SHORT).show();
+            String am0rPm = hourOfDay > 12 && hourOfDay <= 24 ? "PM" : "AM";
+            journalEntity.setTime(formatter(hourOfDay)+" : "+ formatter(minute)+ " "+ am0rPm);
         }
     }
 
 
+    private static String formatter(int item){
+        String iTstr = String.valueOf(item);
+        if(iTstr.length() < 2){
+            return "0"+item;
+        }
+        return iTstr;
+    }
 
     public static class DatePickerFragment extends DialogFragment
             implements DatePickerDialog.OnDateSetListener {
@@ -253,15 +277,7 @@ public class JournalEditor extends FragmentActivity {
         }
 
         public void onDateSet(DatePicker view, int year, int month, int day) {
-            Calendar calendar = Calendar.getInstance();
-            calendar.set(year, month, day);
-            int dayOfWeek = calendar.get(Calendar.DAY_OF_WEEK);
-            String[] weekDays = new String[]{
-                    "Saturday", "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday",
-            };
-
-            String weekDay = weekDays[dayOfWeek];
-            Toast.makeText(getContext(), ""+weekDay, Toast.LENGTH_SHORT).show();
+            journalEntity.setDateAdded(new Date(year, month, day));
         }
     }
 
@@ -313,7 +329,7 @@ public class JournalEditor extends FragmentActivity {
         else if(id == R.id.action_save){
 
         }else if(id == R.id.action_share){
-            
+
         }
 
         return super.onOptionsItemSelected(item);
@@ -359,10 +375,10 @@ public class JournalEditor extends FragmentActivity {
 
     public void autoSave(boolean autosave){
         if(autoSave) {
-            if (dbHelper.updateNote(noteModel.getId(), " ",
-                    content.getText().toString(), noteModel.getDate(), getCurrentDateInfo()) > 0) {
-                Toast.makeText(JournalEditor.this, "Note Auto-saved", Toast.LENGTH_SHORT).show();
-            }
+//            if (dbHelper.updateNote(noteModel.getId(), " ",
+//                    content.getText().toString(), noteModel.getDate(), getCurrentDateInfo()) > 0) {
+//                Toast.makeText(JournalEditor.this, "Note Auto-saved", Toast.LENGTH_SHORT).show();
+//            }
         }
 
     }

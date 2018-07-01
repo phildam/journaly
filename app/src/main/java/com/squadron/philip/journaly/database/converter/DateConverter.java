@@ -1,4 +1,4 @@
-package com.squadron.philip.journaly.database;
+package com.squadron.philip.journaly.database.converter;
 
 import android.arch.persistence.room.TypeConverter;
 

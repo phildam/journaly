@@ -7,16 +7,20 @@ import android.arch.persistence.room.TypeConverters;
 import android.content.Context;
 import android.util.Log;
 
+import com.squadron.philip.journaly.database.converter.DateConverter;
+import com.squadron.philip.journaly.database.dao.JournalDao;
+import com.squadron.philip.journaly.database.entity.JournalEntity;
+
 /**
  * Created by philip on 01/07/2018.
  */
-@Database(entities = {JournalEntry.class}, version = 1, exportSchema = false)
+@Database(entities = {JournalEntity.class}, version = 1, exportSchema = false)
 @TypeConverters(DateConverter.class)
 public abstract class AppDatabase extends RoomDatabase {
 
     private static final String LOG_TAG = AppDatabase.class.getSimpleName();
     private static final Object LOCK = new Object();
-    private static final String DATADASE_NAME = "journals";
+    private static final String DATABASE_NAME = "journals";
     private static AppDatabase sInstance;
 
     public static AppDatabase getInstance(Context context){
@@ -24,9 +28,7 @@ public abstract class AppDatabase extends RoomDatabase {
             synchronized (LOCK) {
                 Log.d(LOG_TAG, "creating db");
                 sInstance = Room.databaseBuilder(context.getApplicationContext(),
-                        AppDatabase.class, AppDatabase.DATADASE_NAME)
-                        //remoe allow mainThread and run in seperate thread
-                        .allowMainThreadQueries()
+                        AppDatabase.class, AppDatabase.DATABASE_NAME)
                         .build();
             }
         }

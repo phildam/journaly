@@ -25,7 +25,6 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_weight="0.07"
-                android:text="Small Text"
                 android:textAppearance="?android:attr/textAppearanceSmall" />
 
 
@@ -44,22 +43,20 @@
     </ScrollView>
 
     <LinearLayout
+        android:id="@+id/preview"
+        android:visibility="visible"
         android:layout_width="match_parent"
         android:orientation="horizontal"
-        android:layout_height="100dp">
+        android:layout_height="wrap_content">
+
         <TextView
             android:id="@+id/selectedPlace"
-            android:layout_width="200dp"
-            android:layout_gravity="start|top"
+            android:layout_width="wrap_content"
+            android:layout_gravity="start|bottom"
             android:layout_height="wrap_content"
-            android:layout_weight="0.07"
-            android:text="Small Text"
+            android:padding="3dp"
             android:textAppearance="?android:attr/textAppearanceSmall" />
 
-        <ImageView
-            android:src="@drawable/places_ic_clear"
-            android:layout_width="90dp"
-            android:layout_height="90dp" />
 
     </LinearLayout>
 
@@ -81,17 +78,9 @@
             android:layout_weight="1"
             android:layout_height="50dp"
             android:layout_margin="3dp"
+            android:onClick="shareJournal"
             android:src="@android:drawable/ic_menu_share"
             android:id="@+id/noteitemshare" />
-        <ImageButton
-            android:background="@drawable/light"
-            android:layout_width="0dp"
-            android:scaleType="centerInside"
-            android:layout_weight="1"
-            android:layout_height="50dp"
-            android:layout_margin="3dp"
-            android:src="@android:drawable/ic_popup_reminder"
-            android:id="@+id/noteitemedit" />
 
         <ImageButton
             android:layout_width="0dp"
@@ -101,6 +90,7 @@
             android:layout_margin="3dp"
             android:layout_height="50dp"
             android:text="Delete"
+            android:onClick="deleteJournal"
             android:src="@android:drawable/ic_menu_delete"
             android:id="@+id/noteitemdelete" />
         <ImageButton
@@ -111,18 +101,9 @@
             android:layout_weight="1"
             android:background="@drawable/light"
             android:scaleType="centerInside"
+            android:onClick="addLocation"
             android:src="@android:drawable/ic_dialog_map"
             android:text="location" />
-
-        <ImageButton
-            android:id="@+id/gallery"
-            android:layout_width="0dp"
-            android:layout_height="50dp"
-            android:layout_margin="3dp"
-            android:layout_weight="1"
-            android:background="@drawable/light"
-            android:scaleType="centerInside"
-            android:src="@android:drawable/picture_frame" />
 
         <ImageButton
             android:id="@+id/date"
@@ -154,6 +135,7 @@
             android:layout_weight="1"
             android:background="@drawable/light"
             android:scaleType="centerInside"
+            android:onClick="saveJournal"
             android:src="@android:drawable/ic_menu_save"
             android:text="save" />
     </LinearLayout>

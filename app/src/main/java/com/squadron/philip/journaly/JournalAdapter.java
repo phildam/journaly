@@ -1,6 +1,8 @@
 package com.squadron.philip.journaly;
 
 import android.content.Context;
+import android.graphics.BitmapFactory;
+import android.net.Uri;
 import android.support.annotation.NonNull;
 import android.support.constraint.ConstraintLayout;
 import android.support.v7.widget.RecyclerView;
@@ -11,6 +13,16 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import com.squadron.philip.journaly.database.entity.JournalEntity;
+
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.net.URI;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.List;
+import java.util.Random;
+
 /**
  * Created by philip on 30/06/2018.
  */
@@ -18,10 +30,10 @@ import android.widget.TextView;
 public class JournalAdapter extends RecyclerView.Adapter<JournalAdapter.JournalViewHolder> {
 
     final private ListItemClickListener mOnClickListener;
-    final private String[] listItem;
+    private List<JournalEntity> journalList;
 
     public interface ListItemClickListener {
-        public void onItemClickListener(int position);
+        public void onItemClickListener(JournalEntity journalEntity);
     }
 
     class JournalViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener {
@@ -44,20 +56,62 @@ public class JournalAdapter extends RecyclerView.Adapter<JournalAdapter.JournalV
             itemView.setOnClickListener(this);
         }
 
-        public void bind(int position){
-            Log.e("pos", String.valueOf(position));
+        private String dateFormatter(Date date){
+            SimpleDateFormat formattedDate = new SimpleDateFormat("dd/MM/yyyy");
+            return formattedDate.format(date);
+        }
+
+
+        public void bind(JournalEntity journal){
+
+            String journalContent = journal.getContent().trim().replace('\n', ' ');
+            int randomImageSelector = Processor.imageSelector(
+                    new Random().nextInt((20 - 0) + 1)
+            );
+
+            journalDate.setText(new Processor().getDayOfWeek(journal.getDateAdded()));
+            journalTime.setText(journal.getTime() );
+            journalLocation.setText(journal.getLocation());
+            journalUpdateTime.setText(dateFormatter(journal.getLastModifiedDate()));
+            journalText.setText(journalContent.length() > 200 ?
+                journalContent.substring(0, 160)+"..." : journalContent );
+
+
+            try {
+                File file = new File(new URI(journal.getImageUrl()));
+                Log.d("FILE", file.getAbsolutePath());
+                if(file.exists()){
+                    journalMainPhoto.setImageBitmap(BitmapFactory.decodeFile(file.getAbsolutePath()));
+                } else {
+                    throw new FileNotFoundException();
+                }
+
+                journalMainPhoto.setImageResource(randomImageSelector);
+            } catch (Exception e){
+                journalMainPhoto.setImageResource(randomImageSelector);
+            }
+
         }
 
         @Override
         public void onClick(View v) {
             int clickedPosition = getAdapterPosition();
-            mOnClickListener.onItemClickListener(clickedPosition);
+            mOnClickListener.onItemClickListener(journalList.get(clickedPosition));
         }
     }
 
-    public JournalAdapter(String[] items, ListItemClickListener listItemClickListener ){
+    public JournalAdapter(List<JournalEntity> journals, ListItemClickListener listItemClickListener ){
         mOnClickListener = listItemClickListener;
-        listItem = items;
+        journalList = journals;
+    }
+
+    public List<JournalEntity> getJournals(){
+        return journalList;
+    }
+
+    public void setJournals(List<JournalEntity> journals) {
+        this.journalList = journals;
+        notifyDataSetChanged();
     }
 
     @NonNull
@@ -72,21 +126,17 @@ public class JournalAdapter extends RecyclerView.Adapter<JournalAdapter.JournalV
                 parent, shouldAttachToParentImmediately);
 
         JournalViewHolder viewHolder = new JournalViewHolder(view);
-
-        //viewHolder.viewHolderIndex.setText("ViewHolder index: " + viewHolderCount);
-
-
         return viewHolder;
     }
 
     @Override
     public void onBindViewHolder(@NonNull JournalViewHolder holder, int position) {
-        holder.bind(position);
+        holder.bind(journalList.get(position));
     }
 
     @Override
     public int getItemCount() {
-        return listItem.length;
+        return journalList.size();
     }
 
 }

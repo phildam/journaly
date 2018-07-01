@@ -6,6 +6,7 @@ import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.support.v7.widget.helper.ItemTouchHelper;
 import android.view.View;
 import android.support.design.widget.NavigationView;
 import android.support.v4.view.GravityCompat;
@@ -18,41 +19,49 @@ import android.view.MenuItem;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+import android.widget.Toast;
+
+import com.squadron.philip.journaly.database.AppDatabase;
+import com.squadron.philip.journaly.database.entity.JournalEntity;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener, JournalAdapter.ListItemClickListener {
 
     private JournalAdapter mAdapter;
-    private RecyclerView mStringList;
+    private RecyclerView mJournalList;
+    private List<JournalEntity> journals;
+    private AppDatabase mAppDataBase;
+    public static String EDITOR = "EDITOR";
+    private AppExecutors executors;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
-        toggleFAB();
 
-        mStringList = (RecyclerView) findViewById(R.id.journal_recycler_view);
+        mAppDataBase = AppDatabase.getInstance(getApplicationContext());
+        executors = new AppExecutors();
+        LoadOrReloadAdapter();
+        loadEditor();
+
+
+        mJournalList = (RecyclerView) findViewById(R.id.journal_recycler_view);
         LinearLayoutManager layoutManager = new LinearLayoutManager(this);
-        mStringList.setLayoutManager(layoutManager);
-        mStringList.setHasFixedSize(true);
-        String[] strList = new String[]{
-                "funke", "tosin", "ddd", "dsdfd", "dsdsd", "ewefdsd", "sdsddfsd"
-                , "sdsdsd", "ersfe", "edsxsd",
-        };
-        mAdapter = new JournalAdapter(strList, this);
-        mStringList.setAdapter(mAdapter);
-
-        if (strList.length > 0) {
-            ((TextView)findViewById(R.id.no_journal)).setVisibility(View.GONE);
-        }
-
+        mJournalList.setLayoutManager(layoutManager);
+        mJournalList.setHasFixedSize(true);
+        swipeToDelete(mJournalList);
 
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
 
         ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
-                this, drawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
+                this, drawer, toolbar, R.string.navigation_drawer_open,
+                R.string.navigation_drawer_close);
         drawer.addDrawerListener(toggle);
         toggle.syncState();
 
@@ -66,17 +75,73 @@ public class MainActivity extends AppCompatActivity
 
     }
 
-    public void toggleFAB(){
-        final LinearLayout journalType = (LinearLayout) findViewById(R.id.journal_type);
+    public void swipeToDelete(RecyclerView recyclerView){
+        new ItemTouchHelper(new ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.LEFT | ItemTouchHelper.RIGHT) {
+            @Override
+            public boolean onMove(RecyclerView recyclerView, RecyclerView.ViewHolder viewHolder,
+                                  RecyclerView.ViewHolder target) {
+                return false;
+            }
+
+            @Override
+            public void onSwiped(final RecyclerView.ViewHolder viewHolder, int direction) {
+                executors.diskIO().execute(new Runnable() {
+                    @Override
+                    public void run() {
+                        int position = viewHolder.getAdapterPosition();
+                        List<JournalEntity> journalEntities = mAdapter.getJournals();
+                        mAppDataBase.journalDao().deleteJournal(journalEntities.get(position));
+                        LoadOrReloadAdapter();
+                    }
+                });
+            }
+        }).attachToRecyclerView(recyclerView);
+    }
+
+    public void LoadOrReloadAdapter(){
+        executors.diskIO().execute(new Runnable() {
+            @Override
+            public void run() {
+                journals = mAppDataBase.journalDao().loadAllJournal();
+                mAdapter = new JournalAdapter(journals, MainActivity.this);
+
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        mJournalList.setAdapter(mAdapter);
+                        toggleInfoText();
+                    }
+                });
+            }
+        });
+
+    }
+
+    public void toggleInfoText(){
+        TextView infoText = (TextView)findViewById(R.id.no_journal);
+        if (journals.size() > 0) {
+            infoText.setVisibility(View.GONE);
+        } else {
+            infoText.setVisibility(View.VISIBLE);
+        }
+    }
+
+
+
+    public void loadEditor(){
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                int journalTypeVisibility = journalType.getVisibility() == View.GONE ?
-                        View.VISIBLE : View.GONE;
-                journalType.setVisibility(journalTypeVisibility);
+                startActivity(new Intent(MainActivity.this, JournalEditor.class));
             }
         });
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        LoadOrReloadAdapter();
     }
 
     @Override
@@ -145,12 +210,12 @@ public class MainActivity extends AppCompatActivity
         return true;
     }
 
-    public void openJournalNote(View view) {
-        startActivity(new Intent(this, JournalEditor.class));
-    }
 
     @Override
-    public void onItemClickListener(int position) {
-
+    public void onItemClickListener(JournalEntity journalEntity) {
+        Toast.makeText(this, journalEntity.getContent(), Toast.LENGTH_SHORT).show();
+        Intent intent = new Intent(MainActivity.this, JournalEditor.class);
+        intent.putExtra(EDITOR, journalEntity);
+        startActivity(intent);
     }
 }
