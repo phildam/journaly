@@ -2,7 +2,6 @@ package com.squadron.philip.journaly;
 
 import android.content.Context;
 import android.graphics.BitmapFactory;
-import android.net.Uri;
 import android.support.annotation.NonNull;
 import android.support.constraint.ConstraintLayout;
 import android.support.v7.widget.RecyclerView;
@@ -65,14 +64,14 @@ public class JournalAdapter extends RecyclerView.Adapter<JournalAdapter.JournalV
         public void bind(JournalEntity journal){
 
             String journalContent = journal.getContent().trim().replace('\n', ' ');
-            int randomImageSelector = Processor.imageSelector(
+            int randomImageSelector = Utils.imageSelector(
                     new Random().nextInt((20 - 0) + 1)
             );
 
-            journalDate.setText(new Processor().getDayOfWeek(journal.getDateAdded()));
+            journalDate.setText(new Utils().getDayOfWeek(new Date(journal.getDateAdded())));
             journalTime.setText(journal.getTime() );
             journalLocation.setText(journal.getLocation());
-            journalUpdateTime.setText(dateFormatter(journal.getLastModifiedDate()));
+            journalUpdateTime.setText(dateFormatter(new Date(journal.getLastModifiedDate())));
             journalText.setText(journalContent.length() > 200 ?
                 journalContent.substring(0, 160)+"..." : journalContent );
 

@@ -28,22 +28,26 @@
             </intent-filter>
         </activity>
         <activity
-            android:name=".AccessScreen"
+            android:name=".SignIn"
             android:label="sign in"
             android:theme="@style/AppTheme.NoActionBar" />
         <activity
-            android:theme="@style/AppTheme.NoActionBar"
-            android:name=".JournalViewer" />
+            android:name=".JournalViewer"
+            android:theme="@style/AppTheme.NoActionBar" />
         <activity
-            android:theme="@style/AppTheme.NoActionBar"
-            android:name=".JournalEditor" />
+            android:name=".JournalEditor"
+            android:theme="@style/AppTheme.NoActionBar" />
         <activity
-            android:theme="@style/AppTheme.NoActionBar"
-            android:name=".MapsActivity"></activity>
+            android:name=".MapsActivity"
+            android:theme="@style/AppTheme.NoActionBar" />
 
         <meta-data
             android:name="com.google.android.geo.API_KEY"
-            android:value="AIzaSyDnJa6ry28rgYjfvv8Ff5-CSLFUNfeiQ4c"/>
+            android:value="AIzaSyDnJa6ry28rgYjfvv8Ff5-CSLFUNfeiQ4c" />
+
+        <activity
+            android:name=".SettingsActivity"
+            android:label="@string/title_activity_settings"></activity>
     </application>
 
 </manifest>

@@ -67,11 +67,11 @@ public class JournalEditor extends FragmentActivity {
         if (getIntent() != null && getIntent().hasExtra(MainActivity.EDITOR)){
             journalEntity = (JournalEntity)getIntent().getSerializableExtra(MainActivity.EDITOR);
 
-            info.setText("Created at: " + journalEntity.getDateAdded().toGMTString());
+            info.setText("Created at: " + journalEntity.getDateAdded());
         } else {
             journalEntity=new JournalEntity();
-            journalEntity.setDateAdded(new Date());
-            info.setText("Date: " + new Date().toGMTString());
+            journalEntity.setDateAdded(new Date().toLocaleString());
+            info.setText("Date: " + new Date().toLocaleString());
         }
         initEditor(journalEntity);
 
@@ -98,7 +98,7 @@ public class JournalEditor extends FragmentActivity {
     }
 
     public void initEditor(JournalEntity journalEntity){
-        info.setText(journalEntity.getLastModifiedDate().toGMTString());
+        info.setText(journalEntity.getLastModifiedDate());
         content.setText(journalEntity.getContent());
         selectedPlace.setText(journalEntity.getLocation());
     }
@@ -237,7 +237,7 @@ public class JournalEditor extends FragmentActivity {
         }
 
         public void onDateSet(DatePicker view, int year, int month, int day) {
-            journalEntity.setDateAdded(new Date(year, month, day));
+            journalEntity.setDateAdded(new Date(year, month, day).toLocaleString());
         }
      }
 

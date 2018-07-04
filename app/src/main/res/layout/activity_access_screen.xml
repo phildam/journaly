@@ -7,7 +7,7 @@ android:layout_height="match_parent"
 android:background="@color/blue_grey_700"
 android:orientation="vertical"
 android:weightSum="4"
-tools:context="com.squadron.philip.journaly.AccessScreen">
+tools:context="com.squadron.philip.journaly.SignIn">
 
 <LinearLayout
     android:layout_width="match_parent"

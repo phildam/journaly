@@ -4,7 +4,8 @@ import android.arch.persistence.room.Entity;
 import android.arch.persistence.room.Ignore;
 import android.arch.persistence.room.PrimaryKey;
 
-import com.squadron.philip.journaly.Processor;
+import com.squadron.philip.journaly.Utils;
+import com.squadron.philip.journaly.model.JournalModel;
 
 import java.io.Serializable;
 import java.util.Date;
@@ -14,17 +15,18 @@ import java.util.Date;
  */
 
 @Entity(tableName = "Journal")
-public class JournalEntity implements Serializable {
+public class JournalEntity implements Serializable, JournalModel {
 
     @PrimaryKey(autoGenerate = true)
     private int id;
     private String content = "";
     private String location = "";
-    private Date dateAdded = null;
-    private Date lastModifiedDate = new Date();
+    private String dateAdded = null;
+    private String lastModifiedDate = new Date().toLocaleString();
     private String imageUrl = "";
     private String time = "";
-    private String dayOfWeek = new Processor().getDayOfWeek(new Date());
+    private String dayOfWeek = "";
+
 
     @Ignore
     public JournalEntity(){
@@ -32,8 +34,8 @@ public class JournalEntity implements Serializable {
     }
 
     @Ignore
-    public JournalEntity(String content, Date dateAdded, String location,
-                         Date lastModifiedDate, String time, String dayOfWeek, String imageUrl){
+    public JournalEntity(String content, String dateAdded, String location,
+                         String lastModifiedDate, String time, String dayOfWeek, String imageUrl){
         this.content = content;
         this.location = location;
         this.dateAdded = dateAdded;
@@ -43,8 +45,8 @@ public class JournalEntity implements Serializable {
         this.setDayOfWeek(dayOfWeek);
     }
 
-    public JournalEntity(int id, String content, Date dateAdded, String location,
-                         Date lastModifiedDate,String time, String dayOfWeek, String imageUrl){
+    public JournalEntity(int id, String content, String dateAdded, String location,
+                         String lastModifiedDate,String time, String dayOfWeek, String imageUrl){
         this.content = content;
         this.id = id;
         this.location = location;
@@ -71,7 +73,6 @@ public class JournalEntity implements Serializable {
         this.content = content;
     }
 
-
     public String getLocation() {
         return location;
     }
@@ -80,19 +81,19 @@ public class JournalEntity implements Serializable {
         this.location = location;
     }
 
-    public Date getDateAdded() {
+    public String getDateAdded() {
         return dateAdded;
     }
 
-    public void setDateAdded(Date dateAdded) {
+    public void setDateAdded(String dateAdded) {
         this.dateAdded = dateAdded;
     }
 
-    public Date getLastModifiedDate() {
+    public String getLastModifiedDate() {
         return lastModifiedDate;
     }
 
-    public void setLastModifiedDate(Date lastModifiedDate) {
+    public void setLastModifiedDate(String lastModifiedDate) {
         this.lastModifiedDate = lastModifiedDate;
     }
 
@@ -119,4 +120,5 @@ public class JournalEntity implements Serializable {
     public void setDayOfWeek(String dayOfWeek) {
         this.dayOfWeek = dayOfWeek;
     }
+
 }

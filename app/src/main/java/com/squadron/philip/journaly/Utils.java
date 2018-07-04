@@ -8,6 +8,7 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.ValueEventListener;
 import com.squadron.philip.journaly.database.entity.JournalEntity;
+import com.squadron.philip.journaly.model.JournalModel;
 
 import java.util.Calendar;
 import java.util.Date;
@@ -18,7 +19,7 @@ import java.util.List;
  * Created by philip on 01/07/2018.
  */
 
-public class Processor {
+public class Utils {
     public String getDayOfWeek(Date date){
         String selectedWeekDay = null;
         try {
@@ -66,6 +67,19 @@ public class Processor {
                 Log.w("FIREBASE", "Failed to read value.", error.toException());
             }
         });
+    }
+
+    public static JournalModel hashMapToJournalEntities(HashMap hashMap) {
+        JournalEntity journalEntity = new JournalEntity();
+        journalEntity.setId(Integer.parseInt(hashMap.get("id").toString()));
+        journalEntity.setContent(hashMap.get("content").toString());
+        journalEntity.setTime((hashMap.get("time").toString()));
+        journalEntity.setDayOfWeek(hashMap.get("dayOfWeek").toString());
+        journalEntity.setImageUrl(hashMap.get("imageUrl").toString());
+        journalEntity.setLocation(hashMap.get("location").toString());
+        journalEntity.setLastModifiedDate((hashMap.get("lastModifiedDate")).toString());
+        journalEntity.setDateAdded(hashMap.get("dateAdded").toString());
+        return journalEntity;
     }
 
 }

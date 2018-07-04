@@ -24,14 +24,15 @@ import com.google.firebase.database.ValueEventListener;
 import com.squadron.philip.journaly.database.AppDatabase;
 import com.squadron.philip.journaly.database.entity.JournalEntity;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
 
-public class AccessScreen extends AppCompatActivity implements
+public class SignIn extends AppCompatActivity implements
         View.OnClickListener {
 
-    private static final String TAG = "AccessScreen";
+    private static final String TAG = "SignIn";
     private static final int RC_SIGN_IN = 9001;
 
     private GoogleSignInClient mGoogleSignInClient;
@@ -90,15 +91,18 @@ public class AccessScreen extends AppCompatActivity implements
                 final HashMap entities = (HashMap) value;
 
                 if(entities != null){
-                    final List<JournalEntity> journalEntities = (List<JournalEntity>)entities.get(key);
+                    final List<HashMap> entitiesMap = (List<HashMap>)entities.get(key);
                     Log.d("PORO", entities.get(key).getClass().getSimpleName());
-                    appExecutors.diskIO().execute(new Runnable() {
+                    appExecutors.networkIO().execute(new Runnable() {
                         @Override
                         public void run() {
-                            if(journalEntities != null && journalEntities.size() > 0 ) {
-                                // mAppDatabase.journalDao().insertJournals(journalEntities);
-                                Log.e("POROS", ((List<JournalEntity>) entities.get(key)).size()+"");
-
+                            if(entitiesMap != null && entitiesMap.size() > 0 ) {
+                                List<JournalEntity> journalEntities = new ArrayList<>();
+                                for (HashMap entity : entitiesMap){
+                                    journalEntities.add((JournalEntity)
+                                            Utils.hashMapToJournalEntities(entity));
+                                }
+                                 mAppDatabase.journalDao().insertJournals(journalEntities);
                             }
                         }
                     });

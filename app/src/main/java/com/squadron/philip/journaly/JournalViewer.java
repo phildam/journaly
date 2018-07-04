@@ -1,26 +1,17 @@
 package com.squadron.philip.journaly;
 
 import android.content.Intent;
-import android.media.Image;
 import android.os.Bundle;
-import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.widget.Button;
-import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.squadron.philip.journaly.database.AppDatabase;
 import com.squadron.philip.journaly.database.entity.JournalEntity;
 
-import java.text.SimpleDateFormat;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.List;
 import java.util.Random;
 
 public class JournalViewer extends AppCompatActivity {
@@ -47,12 +38,12 @@ public class JournalViewer extends AppCompatActivity {
 
         journalEntity = (JournalEntity)getIntent().getSerializableExtra(MainActivity.EDITOR);
         journaltext.setText(journalEntity.getContent());
-        journalLastUpDateTime.setText((journalEntity.getLastModifiedDate().toGMTString()));
+        journalLastUpDateTime.setText((journalEntity.getLastModifiedDate()));
         journalLocation.setText(journalEntity.getLocation());
 
         executors = new AppExecutors();
         mAppDatabase = AppDatabase.getInstance(getApplicationContext());
-        int randomImageSelector = Processor.imageSelector(
+        int randomImageSelector = Utils.imageSelector(
                 new Random().nextInt((20 - 0) + 1)
         );
         imageView = (ImageView) findViewById(R.id.image_viewer);
@@ -77,7 +68,7 @@ public class JournalViewer extends AppCompatActivity {
                         @Override
                         public void run() {
                             journaltext.setText(journalEntity.getContent());
-                            journalLastUpDateTime.setText((journalEntity.getLastModifiedDate().toGMTString()));
+                            journalLastUpDateTime.setText((journalEntity.getLastModifiedDate()));
                             journalLocation.setText(journalEntity.getLocation());
                         }
                     });
