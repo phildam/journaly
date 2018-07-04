@@ -22,6 +22,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.Adapter;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -35,6 +36,7 @@ import com.google.firebase.database.ValueEventListener;
 import com.squadron.philip.journaly.database.AppDatabase;
 import com.squadron.philip.journaly.database.entity.JournalEntity;
 import com.squadron.philip.journaly.model.MainViewModel;
+import com.squadron.philip.journaly.service.FireBaseBackUpService;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -44,38 +46,30 @@ public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener, JournalAdapter.ListItemClickListener {
 
     private JournalAdapter mAdapter;
-    private RecyclerView mJournalList;
     private List<JournalEntity> journals = new ArrayList<>();;
     private AppDatabase mAppDataBase;
     public static String EDITOR = "EDITOR";
     public static String USERNAME = "USERNAME";
     private AppExecutors executors;
     private MainViewModel mainViewModel;
-    private FirebaseDatabase database;
-    private DatabaseReference myRef;
-
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
-        setSupportActionBar(toolbar);
+        //Fire base service for backing up journals
+        FireBaseBackUpService.backUpJournal(this);
 
         mAppDataBase = AppDatabase.getInstance(getApplicationContext());
-        executors = new AppExecutors();
+        RecyclerView journalRecyclerView = (RecyclerView) findViewById(R.id.journal_recycler_view);
         mAdapter = new JournalAdapter(journals, this);
+        executors = new AppExecutors();
 
-        mJournalList = (RecyclerView) findViewById(R.id.journal_recycler_view);
-        LinearLayoutManager layoutManager = new LinearLayoutManager(this);
-        mJournalList.setLayoutManager(layoutManager);
-        mJournalList.setHasFixedSize(true);
-        mJournalList.setAdapter(mAdapter);
+        Singleton.getInstance().setUserName(getIntent().getStringExtra(MainActivity.USERNAME));
 
-        database = FirebaseDatabase.getInstance();
-        myRef = database.getReference("Journaly");
-        firebaseListener(myRef);
+        loadActionBarAndDrawer();
+        initJournalRecycler(journalRecyclerView, mAdapter);
+
 
         mainViewModel = ViewModelProviders.of(this).get(MainViewModel.class);
         final Observer<List<JournalEntity>> jouListObserver = new Observer<List<JournalEntity>>() {
@@ -83,18 +77,27 @@ public class MainActivity extends AppCompatActivity
             public void onChanged(@Nullable List<JournalEntity> journalEntities) {
                 mAdapter.setJournals(journalEntities);
                 toggleInfoText(journalEntities);
-                myRef.child(getIntent().getStringExtra(MainActivity.USERNAME)).setValue(journalEntities);
-
             }
         };
 
         mainViewModel.getJournals().observe(this, jouListObserver);
 
-
         openJournalViewer();
-        swipeToDelete(mJournalList);
 
+    }
+
+    public void initJournalRecycler(RecyclerView journalRecyclerView, JournalAdapter adapter){
+        LinearLayoutManager layoutManager = new LinearLayoutManager(this);
+        journalRecyclerView.setLayoutManager(layoutManager);
+        journalRecyclerView.setHasFixedSize(true);
+        journalRecyclerView.setAdapter(mAdapter);
+        swipeToDelete(journalRecyclerView);
+    }
+
+    public void loadActionBarAndDrawer(){
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
+        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
 
         ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
                 this, drawer, toolbar, R.string.navigation_drawer_open,
@@ -109,30 +112,6 @@ public class MainActivity extends AppCompatActivity
         if(getIntent() != null){
             loadSignInUserDetails(linearLayout, getIntent());
         }
-
-    }
-
-    public void firebaseListener(DatabaseReference myRef){
-        myRef.addValueEventListener(new ValueEventListener() {
-            @Override
-            public void onDataChange(DataSnapshot dataSnapshot) {
-
-                Object value = dataSnapshot.getValue(Object.class);
-                HashMap entities = (HashMap) value;
-                if(entities != null){
-                    List<JournalEntity> journalEntities = (List<JournalEntity>)entities.get(getIntent().getStringExtra(MainActivity.USERNAME));
-                    Log.e("FIREBASE", "Value is: " + journalEntities);
-                }
-
-
-
-            }
-
-            @Override
-            public void onCancelled(DatabaseError error) {
-                Log.w("FIREBASE", "Failed to read value.", error.toException());
-            }
-        });
     }
 
 

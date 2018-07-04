@@ -74,7 +74,7 @@
         <ImageButton
             android:id="@+id/place"
             android:layout_width="0dp"
-            android:layout_height="50dp"
+            android:layout_height="30dp"
             android:layout_margin="3dp"
             android:layout_weight="1"
             android:background="@drawable/light"
@@ -87,19 +87,19 @@
         <ImageButton
             android:id="@+id/date"
             android:layout_width="0dp"
-            android:layout_height="50dp"
+            android:layout_height="30dp"
             android:layout_margin="3dp"
             android:tint="@color/colorPrimaryDark"
             android:layout_weight="1"
             android:background="@drawable/light"
             android:onClick="showDatePicker"
             android:scaleType="centerInside"
-            android:src="@android:drawable/ic_menu_my_calendar" />
+            android:src="@drawable/calendar" />
 
         <ImageButton
             android:id="@+id/time"
             android:layout_width="0dp"
-            android:layout_height="50dp"
+            android:layout_height="30dp"
             android:layout_margin="3dp"
             android:layout_weight="1"
             android:onClick="showTimePicker"
@@ -111,14 +111,14 @@
         <ImageButton
             android:id="@+id/noteitemsave"
             android:layout_width="0dp"
-            android:layout_height="50dp"
+            android:layout_height="30dp"
             android:layout_margin="3dp"
             android:layout_weight="1"
             android:background="@drawable/light"
             android:scaleType="centerInside"
             android:tint="@color/colorPrimaryDark"
             android:onClick="saveJournal"
-            android:src="@android:drawable/ic_menu_save"
+            android:src="@drawable/submit"
             android:text="save" />
     </LinearLayout>
 </LinearLayout>

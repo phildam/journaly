@@ -175,7 +175,6 @@ public class JournalEditor extends FragmentActivity {
 
             @Override
             public void onCancelled(DatabaseError error) {
-
                 Log.w("FIREBASE", "Failed to read value.", error.toException());
             }
         });

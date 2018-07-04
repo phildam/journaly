@@ -3,7 +3,7 @@ package com.squadron.philip.journaly;
 import android.content.Context;
 import android.graphics.BitmapFactory;
 import android.support.annotation.NonNull;
-import android.support.constraint.ConstraintLayout;
+import android.support.v7.widget.CardView;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -43,7 +43,7 @@ public class JournalAdapter extends RecyclerView.Adapter<JournalAdapter.JournalV
         public TextView journalUpdateTime;
         public TextView journalText;
         public ImageView journalMainPhoto;
-        public JournalViewHolder(ConstraintLayout itemView) {
+        public JournalViewHolder(CardView itemView) {
             super(itemView);
             journalDate = (TextView) itemView.findViewById(R.id.journal_date);
             journalTime = (TextView) itemView.findViewById(R.id.journal_time);
@@ -68,15 +68,18 @@ public class JournalAdapter extends RecyclerView.Adapter<JournalAdapter.JournalV
                     new Random().nextInt((20 - 0) + 1)
             );
 
-            journalDate.setText(new Utils().getDayOfWeek(new Date(journal.getDateAdded())));
             journalTime.setText(journal.getTime() );
             journalLocation.setText(journal.getLocation());
-            journalUpdateTime.setText(dateFormatter(new Date(journal.getLastModifiedDate())));
             journalText.setText(journalContent.length() > 200 ?
-                journalContent.substring(0, 160)+"..." : journalContent );
+                    journalContent.substring(0, 160)+"..." : journalContent );
+
 
 
             try {
+                journalDate.setText(new Utils().getDayOfWeek(new Date(journal.getDateAdded())));
+                journalUpdateTime.setText(dateFormatter(new Date(journal.getLastModifiedDate())));
+
+
                 File file = new File(new URI(journal.getImageUrl()));
                 Log.d("FILE", file.getAbsolutePath());
                 if(file.exists()){
@@ -121,7 +124,7 @@ public class JournalAdapter extends RecyclerView.Adapter<JournalAdapter.JournalV
         LayoutInflater inflater = LayoutInflater.from(context);
         boolean shouldAttachToParentImmediately = false;
 
-        ConstraintLayout view = (ConstraintLayout)inflater.inflate(layoutIdForListItem,
+        CardView view = (CardView)inflater.inflate(layoutIdForListItem,
                 parent, shouldAttachToParentImmediately);
 
         JournalViewHolder viewHolder = new JournalViewHolder(view);
